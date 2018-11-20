@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/14 15:20:48 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/16 17:38:17 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/20 17:21:34 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@
 #include <sys/stat.h>
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
+#include <mach-o/fat.h>
+#include <ar.h>
 #include "../libft/includes/libft.h"
 
 typedef struct			s_sec64_list
@@ -36,5 +38,9 @@ t_sec64_list			*new_sec64(struct section_64 *section);
 void					add_sec64(t_sec64_list **list, t_sec64_list *new);
 void					sec64_delone(t_sec64_list **list);
 void					sec64_del(t_sec64_list **list);
+
+//nm.c
+void	read_binary(char *ptr);
+
 
 #endif

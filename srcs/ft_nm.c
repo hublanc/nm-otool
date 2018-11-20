@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/14 12:44:32 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/16 19:52:34 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/20 20:38:58 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -160,7 +160,9 @@ uint32_t	len_symbols(t_symbol *symbols)
 
 	len = 0;
 	while (symbols[len].name)
+	{
 		len++;
+	}
 	return (len);
 }
 
@@ -172,10 +174,14 @@ void	print_symbol_table(t_sec64_list *list, struct symtab_command *sym,
 	t_symbol		*symbols;
 
 	i = 0;
+	ft_putstr("store symbols\n");
 	symbols = store_symbols(sym, ptr);
 	len = len_symbols(symbols);
-	sort_symbols(symbols, 0, len - 1);
-	while (i < len)
+	ft_putstr("sort symbols\n");
+	//sort_symbols(symbols, 0, len - 1);
+	ft_putstr("print symbols\n");
+	ft_putunbrel(sym->nsyms);
+	while (i < sym->nsyms)
 	{
 		if (!((symbols[i].info.n_type & N_TYPE) == N_UNDF))
 			print_value(symbols[i].info.n_value);
@@ -226,22 +232,64 @@ void	handle_64(char *ptr)
 		i++;
 		lc = (void*)lc + lc->cmdsize;
 	}
+	ft_putstr("printing...\n");
 	print_symbol_table(sec64_list, sym, ptr);
+	ft_putstr("end of printing...\n");
+}
+
+void	handle_archive(char *ptr)
+{
+	struct ar_hdr	*ar;
+	int32_t			size_ar;
+	int32_t			size_name;
+
+	ar = (struct ar_hdr*)((void*)ptr + SARMAG);
+	size_ar = ft_atoi(ar->ar_size);
+	while (1)
+	{
+		ar = (struct ar_hdr*)((char*)ar + ((sizeof(struct ar_hdr) + size_ar)));
+		size_name = ft_atoi(ar->ar_name + ft_strlen(AR_EFMT1));
+		size_ar = ft_atoi(ar->ar_size);
+		ft_putstr(ar->ar_name);
+		read_binary((char*)ar + sizeof(struct ar_hdr) + size_name);
+		ft_putstr("\n");
+	}
 }
 
 void	read_binary(char *ptr)
 {
 	uint32_t	magic_number;
+	char		*str;
 	
 	magic_number = *(int*)ptr;
+	str = (char*)ptr;
 	if (magic_number == MH_MAGIC)
 	{
 		ft_putendl("i m a 32 bit object file");
 	}
 	else if (magic_number == MH_MAGIC_64)
 	{
+		ft_putendl("i m a 64 bit object file");
 		handle_64(ptr);
 	}
+	else if (magic_number == FAT_CIGAM || magic_number == FAT_MAGIC)
+	{
+		ft_putendl("Je susi gros (no fat shaming please)");
+	}
+	else if (!ft_strncmp(str, ARMAG, SARMAG))
+	{
+		ft_putendl("je susi une archive");
+		handle_archive(ptr);
+	}
+	/*
+	ft_putstr("FATMAGIC: ");
+	ft_putunbrel(FAT_MAGIC);
+	ft_putstr("FATCIGAM ");
+	ft_putunbrel(FAT_CIGAM);
+	ft_putstr("Actual nb: ");
+	ft_putunbrel(magic_number);
+	ft_putstr(str);
+	*/
 }
 
 int		ft_nm(char *filename)
@@ -264,6 +312,7 @@ int		ft_nm(char *filename)
 		return(EXIT_FAILURE);
 	}
 	read_binary(ptr);
+	ft_putunbrel(info.st_size);
 	munmap(ptr, info.st_size);
 	close(fd);
 	return (EXIT_SUCCESS);
