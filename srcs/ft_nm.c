@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/14 12:44:32 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/20 20:38:58 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/21 19:36:31 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ void	print_symbol_type(struct nlist_64 symbol, t_sec64_list *list)
 		list = list->next;
 		i++;
 	}
-	if ((symbol.n_type & N_TYPE) == N_UNDF)
+	if ((symbol.n_type & N_TYPE) == N_UNDF && (symbol.n_value == 0))
 		c_sym[1] = 'U';
 	else if ((symbol.n_type & N_TYPE) == N_ABS)
 		c_sym[1] = 'A';
@@ -71,7 +71,8 @@ void	print_symbol_type(struct nlist_64 symbol, t_sec64_list *list)
 		c_sym[1] = 'D';
 	else if (sect && (!ft_strcmp(sect->sectname, SECT_BSS)))
 		c_sym[1] = 'B';
-	else if (sect && (!ft_strcmp(sect->sectname, SECT_COMMON)))
+	else if ((symbol.n_type & N_TYPE) == N_UNDF
+			&& symbol.n_type & N_EXT && symbol.n_value != 0)
 		c_sym[1] = 'C';
 	else
 		c_sym[1] = 'S';
@@ -119,18 +120,22 @@ void	swap_symbol(t_symbol *ptr1, t_symbol *ptr2)
 	*ptr2 = tmp;
 }
 
-uint32_t	inside_sort(t_symbol *symbols, uint32_t x, uint32_t y)
+int32_t		inside_sort(t_symbol *symbols, int32_t x, int32_t y)
 {
 	t_symbol	pivot;
 	int32_t		i;
 	int32_t		j;
+	int			ret;
 
 	pivot = symbols[y];
 	i = x - 1;
 	j = x;
-	while (j < (int32_t)y)
+	ret = 0;
+	while (j < y)
 	{
-		if (ft_strcmp(symbols[j].name, pivot.name) <= 0)
+		ret = ft_strcmp(symbols[j].name, pivot.name);
+		if ((ret < 0) || (ret == 0
+			&& symbols[j].info.n_value < pivot.info.n_value))
 		{
 			i++;
 			swap_symbol(&(symbols[i]), &(symbols[j]));
@@ -141,9 +146,9 @@ uint32_t	inside_sort(t_symbol *symbols, uint32_t x, uint32_t y)
 	return (i + 1);
 }
 
-void	sort_symbols(t_symbol *symbols, uint32_t x, uint32_t y)
+void	sort_symbols(t_symbol *symbols, int32_t x, int32_t y)
 {
-	uint32_t	p;
+	int32_t	p;
 
 	p = 0;
 	if (x < y)
@@ -154,12 +159,12 @@ void	sort_symbols(t_symbol *symbols, uint32_t x, uint32_t y)
 	}
 }
 
-uint32_t	len_symbols(t_symbol *symbols)
+int32_t	len_symbols(t_symbol *symbols, struct symtab_command *sym)
 {
 	uint32_t	len;
 
 	len = 0;
-	while (symbols[len].name)
+	while ((symbols[len].name) && (len < sym->nsyms))
 	{
 		len++;
 	}
@@ -169,19 +174,15 @@ uint32_t	len_symbols(t_symbol *symbols)
 void	print_symbol_table(t_sec64_list *list, struct symtab_command *sym,
 							char *ptr)
 {
-	uint32_t		i;
-	uint32_t		len;
+	int32_t			i;
+	int32_t			len;
 	t_symbol		*symbols;
 
 	i = 0;
-	ft_putstr("store symbols\n");
 	symbols = store_symbols(sym, ptr);
-	len = len_symbols(symbols);
-	ft_putstr("sort symbols\n");
-	//sort_symbols(symbols, 0, len - 1);
-	ft_putstr("print symbols\n");
-	ft_putunbrel(sym->nsyms);
-	while (i < sym->nsyms)
+	len = len_symbols(symbols, sym);
+	sort_symbols(symbols, 0, len - 1);
+	while (i < len)
 	{
 		if (!((symbols[i].info.n_type & N_TYPE) == N_UNDF))
 			print_value(symbols[i].info.n_value);
@@ -232,31 +233,57 @@ void	handle_64(char *ptr)
 		i++;
 		lc = (void*)lc + lc->cmdsize;
 	}
-	ft_putstr("printing...\n");
+	//ft_putstr("printing...\n");
 	print_symbol_table(sec64_list, sym, ptr);
-	ft_putstr("end of printing...\n");
+	//ft_putstr("end of printing...\n");
 }
 
-void	handle_archive(char *ptr)
+void	display_name_arch(char *filename, char *object)
+{
+	ft_putstr("\n");
+	ft_putstr(filename);
+	ft_putstr("(");
+	ft_putstr(object);
+	ft_putstr("):\n");
+}
+
+void	handle_archive(char *ptr, off_t size, char *filename)
 {
 	struct ar_hdr	*ar;
 	int32_t			size_ar;
 	int32_t			size_name;
 
 	ar = (struct ar_hdr*)((void*)ptr + SARMAG);
-	size_ar = ft_atoi(ar->ar_size);
-	while (1)
+	if ((void*)ar < (void*)(ptr + size))
 	{
-		ar = (struct ar_hdr*)((char*)ar + ((sizeof(struct ar_hdr) + size_ar)));
-		size_name = ft_atoi(ar->ar_name + ft_strlen(AR_EFMT1));
 		size_ar = ft_atoi(ar->ar_size);
-		ft_putstr(ar->ar_name);
-		read_binary((char*)ar + sizeof(struct ar_hdr) + size_name);
-		ft_putstr("\n");
+		ar = (struct ar_hdr*)((char*)ar + ((sizeof(struct ar_hdr) + size_ar)));
+	}
+	while ((void*)ar < (void*)(ptr + size))
+	{
+		if (!ft_strncmp(ar->ar_fmag, ARFMAG, FT_SARFMAG))
+		{
+			size_name = ft_atoi(ar->ar_name + ft_strlen(AR_EFMT1));
+			size_ar = ft_atoi(ar->ar_size);
+			display_name_arch(filename, ar->ar_name + sizeof(struct ar_hdr));
+			read_binary((char*)ar + sizeof(struct ar_hdr) + size_name, size,
+						filename);
+		}
+		else
+			break ;
+		ar = (struct ar_hdr*)((char*)ar + ((sizeof(struct ar_hdr) + size_ar)));
 	}
 }
 
-void	read_binary(char *ptr)
+void	handle_fat(char *ptr, off_t size, char *filename)
+{
+	struct fat_header	*fh;
+
+	fh = (struct fat_header*)ptr;
+	
+}
+
+void	read_binary(char *ptr, off_t size, char *filename)
 {
 	uint32_t	magic_number;
 	char		*str;
@@ -269,17 +296,16 @@ void	read_binary(char *ptr)
 	}
 	else if (magic_number == MH_MAGIC_64)
 	{
-		ft_putendl("i m a 64 bit object file");
 		handle_64(ptr);
 	}
 	else if (magic_number == FAT_CIGAM || magic_number == FAT_MAGIC)
 	{
 		ft_putendl("Je susi gros (no fat shaming please)");
+		handle_fat(ptr, size, filename);
 	}
 	else if (!ft_strncmp(str, ARMAG, SARMAG))
 	{
-		ft_putendl("je susi une archive");
-		handle_archive(ptr);
+		handle_archive(ptr, size, filename);
 	}
 	/*
 	ft_putstr("FATMAGIC: ");
@@ -311,8 +337,8 @@ int		ft_nm(char *filename)
 		close(fd);
 		return(EXIT_FAILURE);
 	}
-	read_binary(ptr);
-	ft_putunbrel(info.st_size);
+	read_binary(ptr, info.st_size, filename);
+	//ft_putunbrel(info.st_size);
 	munmap(ptr, info.st_size);
 	close(fd);
 	return (EXIT_SUCCESS);

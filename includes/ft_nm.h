@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/14 15:20:48 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/20 17:21:34 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/21 15:19:56 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@
 #include <mach-o/fat.h>
 #include <ar.h>
 #include "../libft/includes/libft.h"
+
+# define FT_SARFMAG 2
 
 typedef struct			s_sec64_list
 {
@@ -40,7 +42,7 @@ void					sec64_delone(t_sec64_list **list);
 void					sec64_del(t_sec64_list **list);
 
 //nm.c
-void	read_binary(char *ptr);
+void	read_binary(char *ptr, off_t size, char *filename);
 
 
 #endif
