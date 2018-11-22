@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/14 15:20:48 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/21 15:19:56 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/22 22:19:11 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,13 @@
 #include "../libft/includes/libft.h"
 
 # define FT_SARFMAG 2
+
+# define NO_ARCH	0
+# define ARCH_FOUND 1
+# define ALL_ARCH	2
+
+# define PAD_32		8
+# define PAD_64		16
 
 typedef struct			s_sec64_list
 {
@@ -41,8 +48,32 @@ void					add_sec64(t_sec64_list **list, t_sec64_list *new);
 void					sec64_delone(t_sec64_list **list);
 void					sec64_del(t_sec64_list **list);
 
-//nm.c
-void	read_binary(char *ptr, off_t size, char *filename);
+//fat.c
+void					handle_fat32(char *ptr, off_t size, char *filename,
+									uint32_t nfat_arch);
+void					handle_fat(char *ptr, off_t size, char *filename);
 
+//archive.c
+void					handle_archive(char *ptr, off_t size, char *filename);
+
+//qsort.c
+void					sort_symbols(t_symbol *symbols, int32_t x, int32_t y);
+
+//mach-o.c
+void					handle_macho(char *ptr);
+
+//symbol.c
+void					print_symbol_table(t_sec64_list *list,
+							struct symtab_command *sym, char *ptr, uint32_t magic);
+
+//tools.c
+int32_t					len_symbols(t_symbol *symbols,
+									struct symtab_command *sym);
+void					print_value(uint64_t nb, uint32_t magic,
+									uint8_t n_type);
+size_t					length_base(uint64_t nb, int base);
+
+//nm.c
+void					read_binary(char *ptr, off_t size, char *filename);
 
 #endif

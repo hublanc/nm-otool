@@ -6,20 +6,21 @@
 #    By: hublanc <marvin@42.fr>                     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/07/24 15:04:09 by hublanc           #+#    #+#              #
-#    Updated: 2018/11/16 14:41:40 by hublanc          ###   ########.fr        #
+#    Updated: 2018/11/22 18:36:59 by hublanc          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 #	Variables
 NAME    = ft_nm
 CC      = gcc
-FLAGS   = -Wall -Wextra -Werror 
+FLAGS   = -Wall -Wextra -Werror -g
 LIB     = libft/libft.a
 HEADER  = includes/
 LIBSRC  = libft/
 SRCDIR  = srcs/
 OBJDIR	= objs/
-SRC		= ft_nm.c sec64.c
+SRC		= ft_nm.c sec64.c fat.c archive.c qsort.c\
+		  mach-o.c symbol.c tools.c
 SRCS	= $(addprefix $(SRCDIR), $(SRC))
 OBJS	= $(addprefix $(OBJDIR), $(SRC:.c=.o))
 
