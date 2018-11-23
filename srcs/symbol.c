@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/22 18:28:22 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/22 22:17:01 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/23 15:44:17 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ static void		print_symbol_type(struct nlist_64 symbol, t_sec64_list *list,
 	}
 	value = (magic == MH_MAGIC || magic == MH_CIGAM ?
 				(uint32_t)symbol.n_value : symbol.n_value);
+	value = cb(magic, V_64, value);
 	if ((symbol.n_type & N_TYPE) == N_UNDF && (value == 0))
 		c_sym[1] = 'U';
 	else if ((symbol.n_type & N_TYPE) == N_ABS)
@@ -70,26 +71,27 @@ static t_symbol	*store_symbols(struct symtab_command *sym,
 						char *ptr, uint32_t magic)
 {
 	t_symbol		*symbols;
-	char			*stringtable;
+	char			*str;
 	struct nlist_64	*array;
 	uint32_t		i;
 	uint32_t		j;
 
-	if (!(symbols = (t_symbol*)ft_memalloc(sizeof(t_symbol) * sym->nsyms)))
+	if (!(symbols = (t_symbol*)ft_memalloc(sizeof(t_symbol)
+					* cb(magic, V_32, sym->nsyms))))
 		return (NULL);
-	array = (void*)ptr + sym->symoff;
-	stringtable = (void*)ptr + sym->stroff;
+	array = (void*)ptr + cb(magic, V_32, sym->symoff);
+	str = (void*)ptr + cb(magic, V_32, sym->stroff);
 	i = 0;
 	j = 0;
-	while (i < sym->nsyms)
+	while (i < cb(magic, V_32, sym->nsyms))
 	{
-		if (!(array->n_type & N_STAB))
+		if (!(cb(magic, V_32, array->n_type) & N_STAB))
 		{
 			symbols[j].info = *array;
-			symbols[j].name = stringtable + array->n_un.n_strx;
+			symbols[j].name = str + cb(magic, V_32, array->n_un.n_strx);
 			j++;
 		}
-		array = (struct nlist_64*)((char*)array +jump_nlist(magic));
+		array = (struct nlist_64*)((char*)array + jump_nlist(magic));
 		i++;
 	}
 	return(symbols);
@@ -104,11 +106,12 @@ void			print_symbol_table(t_sec64_list *list,
 
 	i = 0;
 	symbols = store_symbols(sym, ptr, magic);
-	len = len_symbols(symbols, sym);
-	sort_symbols(symbols, 0, len - 1);
+	len = len_symbols(symbols, sym, magic);
+	sort_symbols(symbols, 0, len - 1, magic);
 	while (i < len)
 	{
-		print_value(symbols[i].info.n_value, magic, symbols[i].info.n_type);
+		print_value(cb(magic, V_64, symbols[i].info.n_value),
+					magic, symbols[i].info.n_type);
 		print_symbol_type(symbols[i].info, list, magic);
 		ft_putendl(symbols[i].name);
 		i++;

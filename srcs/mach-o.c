@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/22 18:24:22 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/22 21:41:44 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/23 18:46:05 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,12 +60,12 @@ static uint32_t	get_nsects(struct load_command *lc, uint32_t magic)
 	if (magic == MH_MAGIC || magic == MH_CIGAM)
 	{
 		seg = (struct segment_command*)lc;
-		nsects = seg->nsects;
+		nsects = cb(magic, V_32, seg->nsects);
 	}
 	else if (magic == MH_MAGIC_64 || magic == MH_CIGAM_64)
 	{
 		seg64 = (struct segment_command_64*)lc;
-		nsects = seg64->nsects;
+		nsects = cb(magic, V_32, seg64->nsects);
 	}
 	return (nsects);
 }
@@ -87,7 +87,17 @@ static void	store_sections(t_sec64_list	**list, struct load_command *lc, uint32_
 	}
 }
 
-void		handle_macho(char *ptr)
+void		print_filename(char *filename, int arg)
+{
+	if (arg == M_ARG)
+	{
+		ft_putstr("\n");
+		ft_putstr(filename);
+		ft_putstr(":\n");
+	}
+}
+
+void		handle_macho(t_info info, int arg)
 {
 	uint32_t				i;
 	struct mach_header_64	*header;
@@ -98,16 +108,19 @@ void		handle_macho(char *ptr)
 	i = 0;
 	sec64_list = NULL;
 	sym = NULL;
-	header = (struct mach_header_64*)ptr;
-	lc = (void*)ptr + jump_header(header->magic);
-	while (i < header->ncmds)
+	header = (struct mach_header_64*)(info.ptr);
+	lc = (void*)(info.ptr) + jump_header(header->magic);
+	print_filename(info.filename, arg);
+	while (i < cb(header->magic, V_32, header->ncmds)
+		&& (void*)lc < (void*)(info.ptr + info.size))
 	{
-		if (lc->cmd == LC_SYMTAB)
+		if (cb(header->magic, V_32, lc->cmd) == LC_SYMTAB)
 			sym = (struct symtab_command*)lc;
-		if (lc->cmd == LC_SEGMENT_64 || lc->cmd == LC_SEGMENT)
-			store_sections(&sec64_list, lc, header->magic);
+		if (cb(header->magic, V_32, lc->cmd) == LC_SEGMENT_64
+			|| lc->cmd == LC_SEGMENT)
+			store_sections(info, &sec64_list, lc, header->magic);
 		i++;
-		lc = (void*)lc + lc->cmdsize;
+		lc = (void*)lc + cb(header->magic, V_32, lc->cmdsize);
 	}
-	print_symbol_table(sec64_list, sym, ptr, header->magic);
+	print_symbol_table(info, sec64_list, sym, header->magic);
 }

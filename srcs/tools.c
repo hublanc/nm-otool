@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/22 18:34:32 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/22 22:19:31 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/23 15:33:14 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,14 +59,30 @@ void		print_value(uint64_t nb, uint32_t magic, uint8_t n_type)
 	ft_putstr(buffer);
 }
 
-int32_t		len_symbols(t_symbol *symbols, struct symtab_command *sym)
+int32_t		len_symbols(t_symbol *symbols, struct symtab_command *sym,
+						uint32_t magic)
 {
 	uint32_t	len;
 
 	len = 0;
-	while ((symbols[len].name) && (len < sym->nsyms))
+	while ((symbols[len].name)
+			&& (len < cb(magic, V_32, sym->nsyms)))
 	{
 		len++;
 	}
 	return (len);
+}
+
+uint64_t	cb(uint32_t magic, uint32_t type, uint64_t value)
+{
+	if (magic == MH_CIGAM)
+		value = OSSwapInt32(value);
+	else if (magic == MH_CIGAM_64)
+	{
+		if (type == V_32)
+			value = OSSwapInt32(value);
+		else if (type == V_64)
+			value = OSSwapInt64(value);
+	}
+	return (value);
 }

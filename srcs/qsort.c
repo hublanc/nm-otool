@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/22 18:17:06 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/22 18:24:07 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/23 15:38:59 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,8 @@ static void		swap_symbol(t_symbol *ptr1, t_symbol *ptr2)
 	*ptr2 = tmp;
 }
 
-static int32_t	inside_sort(t_symbol *symbols, int32_t x, int32_t y)
+static int32_t	inside_sort(t_symbol *symbols, int32_t x, int32_t y,
+							uint32_t magic)
 {
 	t_symbol	pivot;
 	int32_t		i;
@@ -36,7 +37,8 @@ static int32_t	inside_sort(t_symbol *symbols, int32_t x, int32_t y)
 	{
 		ret = ft_strcmp(symbols[j].name, pivot.name);
 		if ((ret < 0) || (ret == 0
-			&& symbols[j].info.n_value < pivot.info.n_value))
+			&& cb(magic, V_64, symbols[j].info.n_value) 
+			< cb(magic, V_64, pivot.info.n_value)))
 		{
 			i++;
 			swap_symbol(&(symbols[i]), &(symbols[j]));
@@ -47,15 +49,16 @@ static int32_t	inside_sort(t_symbol *symbols, int32_t x, int32_t y)
 	return (i + 1);
 }
 
-void			sort_symbols(t_symbol *symbols, int32_t x, int32_t y)
+void			sort_symbols(t_symbol *symbols, int32_t x, int32_t y,
+							uint32_t magic)
 {
 	int32_t	p;
 
 	p = 0;
 	if (x < y)
 	{
-		p = inside_sort(symbols, x, y);
-		sort_symbols(symbols, x, p - 1);
-		sort_symbols(symbols, p + 1, y);
+		p = inside_sort(symbols, x, y, magic);
+		sort_symbols(symbols, x, p - 1, magic);
+		sort_symbols(symbols, p + 1, y, magic);
 	}
 }

@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/22 18:12:34 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/22 18:15:53 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/23 18:22:35 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ void		handle_archive(char *ptr, off_t size, char *filename)
 			size_ar = ft_atoi(ar->ar_size);
 			display_name_arch(filename, ar->ar_name + sizeof(struct ar_hdr));
 			read_binary((char*)ar + sizeof(struct ar_hdr) + size_name, size,
-						filename);
+						filename, O_ARG);
 		}
 		else
 			break ;
