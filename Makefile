@@ -6,12 +6,13 @@
 #    By: hublanc <marvin@42.fr>                     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/07/24 15:04:09 by hublanc           #+#    #+#              #
-#    Updated: 2018/11/22 18:36:59 by hublanc          ###   ########.fr        #
+#    Updated: 2018/11/26 21:00:53 by hublanc          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 #	Variables
-NAME    = ft_nm
+FT_NM   = ft_nm
+FT_OTOOL= ft_otool
 CC      = gcc
 FLAGS   = -Wall -Wextra -Werror -g
 LIB     = libft/libft.a
@@ -19,8 +20,9 @@ HEADER  = includes/
 LIBSRC  = libft/
 SRCDIR  = srcs/
 OBJDIR	= objs/
-SRC		= ft_nm.c sec64.c fat.c archive.c qsort.c\
-		  mach-o.c symbol.c tools.c
+SRC		= sec64.c fat.c archive.c qsort.c\
+		  macho.c symbol.c tools.c jump.c print_value.c\
+		  core.c print_text_section.c
 SRCS	= $(addprefix $(SRCDIR), $(SRC))
 OBJS	= $(addprefix $(OBJDIR), $(SRC:.c=.o))
 
@@ -30,10 +32,16 @@ RED     =   \033[0;31m
 CYN     =   \033[0;36m
 NC      =   \033[0m
 	
-all: $(OBJDIR) $(NAME)
+all: $(OBJDIR) $(FT_NM) $(FT_OTOOL)
 
-$(NAME): $(LIB) $(OBJS)
-	$(CC) $(FLAGS) $(LIBSRC)/libft.a -o $(NAME) $(OBJS)
+$(FT_NM): $(LIB) $(OBJS)
+	$(CC) $(FLAGS) -c -o $(OBJDIR)$(FT_NM).o $(SRCDIR)$(FT_NM).c -I $(HEADER)
+	$(CC) $(FLAGS) $(LIBSRC)/libft.a -o $(FT_NM) $(OBJS) $(OBJDIR)$(FT_NM).o
+	@echo "\n${CYN}PROCESSING DONE !${NC}"
+
+$(FT_OTOOL): $(LIB) $(OBJS)
+	$(CC) $(FLAGS) -c -o $(OBJDIR)$(FT_OTOOL).o $(SRCDIR)$(FT_OTOOL).c -I $(HEADER)
+	$(CC) $(FLAGS) $(LIBSRC)/libft.a -o $(FT_OTOOL) $(OBJS) $(OBJDIR)$(FT_OTOOL).o
 	@echo "\n${CYN}PROCESSING DONE !${NC}"
 
 $(OBJDIR):
@@ -54,7 +62,7 @@ clean:
 
 fclean: clean
 	@echo "${RED}Cleaning ${NC}./libft/${RED}libft.h${NC}\n"
-	@rm -rf $(NAME)
+	@rm -rf $(FT_NM) $(FT_OTOOL)
 	@rm -rf $(LINK)
 	@echo "${RED}DELETE DONE !${NC}"
 

@@ -6,58 +6,11 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/22 18:34:32 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/23 15:33:14 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/26 21:24:07 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/ft_nm.h"
-
-size_t		length_base(uint64_t nb, int base)
-{
-	int length;
-
-	length = 1;
-	while (nb /= base)
-		length++;
-	return (length);
-}
-
-void		print_space_value(uint32_t magic)
-{
-	if (magic == MH_MAGIC || magic == MH_CIGAM)
-		ft_putstr("        ");
-	else if (magic == MH_MAGIC_64 || magic == MH_CIGAM_64)
-		ft_putstr("                ");
-}
-
-void		print_value(uint64_t nb, uint32_t magic, uint8_t n_type)
-{
-	const char		base_str[17] = "0123456789abcdef\0";
-	char			buffer[100];
-	size_t			index;
-	size_t			length;
-	size_t			pad;
-
-	if ((n_type & N_TYPE) == N_UNDF)
-		return (print_space_value(magic));
-	pad = (magic == MH_MAGIC || magic == MH_CIGAM ? 
-			PAD_32 : PAD_64);
-	nb = (magic == MH_MAGIC || magic == MH_CIGAM ? 
-			(uint32_t)nb : nb);
-	ft_bzero(buffer, 100);
-	length = length_base(nb, 16);
-	index = 0;
-	while (index < pad)
-		buffer[index++] = '0';
-	index--;
-	while (nb > 0)
-	{
-		buffer[index] = base_str[nb % 16];
-		nb /= 16;
-		index--;
-	}
-	ft_putstr(buffer);
-}
 
 int32_t		len_symbols(t_symbol *symbols, struct symtab_command *sym,
 						uint32_t magic)
@@ -85,4 +38,30 @@ uint64_t	cb(uint32_t magic, uint32_t type, uint64_t value)
 			value = OSSwapInt64(value);
 	}
 	return (value);
+}
+
+int			cp(t_info info, void *ptr1)
+{
+	int		ret;
+
+	ret = OUT_BOUND;
+	if ((void*)(info.ptr + info.size) > ptr1)
+		ret = VALID_PTR;
+	return (ret);
+}
+
+void		binary_tmp(t_info info, char *obj_ptr, int arg)
+{
+	t_info	tmp;
+
+	tmp.ptr = obj_ptr;
+	tmp.size = info.size;
+	tmp.filename = info.filename;
+	if (cp(info, obj_ptr))
+	{
+		if (arg == O_ARG || arg == M_ARG)
+			read_binary(tmp, O_ARG);
+		else if (arg == OTOOL_FILE || arg == OTOOL_OTH)
+			read_binary(tmp, OTOOL_OTH);
+	}
 }

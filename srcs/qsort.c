@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/22 18:17:06 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/23 15:38:59 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/26 16:12:17 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ static int32_t	inside_sort(t_symbol *symbols, int32_t x, int32_t y,
 	{
 		ret = ft_strcmp(symbols[j].name, pivot.name);
 		if ((ret < 0) || (ret == 0
-			&& cb(magic, V_64, symbols[j].info.n_value) 
+			&& cb(magic, V_64, symbols[j].info.n_value)
 			< cb(magic, V_64, pivot.info.n_value)))
 		{
 			i++;

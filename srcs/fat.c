@@ -6,40 +6,64 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/22 18:10:30 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/23 18:20:38 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/26 21:27:15 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/ft_nm.h"
 
-void	print_cpu_type(cpu_type_t type)
+static void	print_cpu_type(cpu_type_t type)
 {
 	static const cpu_type_t cpu_types[14] = {CPU_TYPE_VAX, CPU_TYPE_MC680x0,
 		CPU_TYPE_I386, CPU_TYPE_X86_64, CPU_TYPE_MC98000, CPU_TYPE_HPPA,
 		CPU_TYPE_ARM, CPU_TYPE_ARM64, CPU_TYPE_MC88000, CPU_TYPE_SPARC,
 		CPU_TYPE_I860, CPU_TYPE_POWERPC, CPU_TYPE_POWERPC64, 0};
-	static const char *cpu_str[14] = {"vax", "mc680x0", "i386", "x86_64",
+	static const char		*cpu_str[14] = {"vax", "mc680x0", "i386", "x86_64",
 		"mc98000", "hppa", "arm", "arm64", "mc88000", "sparc", "i860",
 		"ppc", "ppc64", 0};
-	int	i;
+	int						i;
 
 	i = 0;
-	while (i < 14)
+	while (i < 13)
 	{
 		if (type == cpu_types[i])
 		{
 			ft_putstr(cpu_str[i]);
-			break;
+			break ;
 		}
 		i++;
 	}
 }
 
-void	print_name_fat32(char *filename, cpu_type_t type, int arch)
+static int	check_cpu_type(cpu_type_t type)
+{
+	static const cpu_type_t cpu_types[14] = {CPU_TYPE_VAX, CPU_TYPE_MC680x0,
+		CPU_TYPE_I386, CPU_TYPE_X86_64, CPU_TYPE_MC98000, CPU_TYPE_HPPA,
+		CPU_TYPE_ARM, CPU_TYPE_ARM64, CPU_TYPE_MC88000, CPU_TYPE_SPARC,
+		CPU_TYPE_I860, CPU_TYPE_POWERPC, CPU_TYPE_POWERPC64, 0};
+	int						i;
+	int						ret;
+
+	i = 0;
+	ret = NO_CPU;
+	while (i < 13)
+	{
+		if (type == cpu_types[i])
+		{
+			ret = VALID_CPU;
+			break ;
+		}
+		i++;
+	}
+	return (ret);
+}
+
+static void	put_name_fat32(char *filename, cpu_type_t type, int arch, int arg)
 {
 	if (arch == ALL_ARCH)
 	{
-		ft_putstr("\n");
+		if (arg == O_ARG || arg == M_ARG)
+			ft_putstr("\n");
 		ft_putstr(filename);
 		ft_putstr(" (for architecture ");
 		print_cpu_type(type);
@@ -47,7 +71,7 @@ void	print_name_fat32(char *filename, cpu_type_t type, int arch)
 	}
 }
 
-void	handle_fat32(char *ptr, off_t size, char *filename, uint32_t nfat_arch)
+void		handle_fat32(t_info info, uint32_t nfat_arch, int arg)
 {
 	uint32_t		i;
 	int				arch;
@@ -55,14 +79,15 @@ void	handle_fat32(char *ptr, off_t size, char *filename, uint32_t nfat_arch)
 
 	i = 0;
 	arch = NO_ARCH;
-	fa = (struct fat_arch*)(ptr + sizeof(struct fat_header));
-	while ((void*)fa < (void*)(ptr + size) && i < OSSwapInt32(nfat_arch))
+	fa = (struct fat_arch*)(info.ptr + sizeof(struct fat_header));
+	while (cp(info, fa) && i < OSSwapInt32(nfat_arch))
 	{
-		if (OSSwapInt32(fa->cputype) == CPU_TYPE_X86_64 || arch == ALL_ARCH)
+		if ((OSSwapInt32(fa->cputype) == CPU_TYPE_X86_64 || arch == ALL_ARCH)
+			&& check_cpu_type(OSSwapInt32(fa->cputype)))
 		{
 			arch = arch == NO_ARCH ? ARCH_FOUND : arch;
-			print_name_fat32(filename, OSSwapInt32(fa->cputype), arch);
-			read_binary(ptr + OSSwapInt32(fa->offset), size, filename, O_ARG);
+			put_name_fat32(info.filename, OSSwapInt32(fa->cputype), arch, arg);
+			binary_tmp(info, info.ptr + OSSwapInt32(fa->offset), arg);
 		}
 		fa = (struct fat_arch*)((char*)fa + sizeof(struct fat_arch));
 		i++;
@@ -70,18 +95,18 @@ void	handle_fat32(char *ptr, off_t size, char *filename, uint32_t nfat_arch)
 		{
 			i = 0;
 			arch = ALL_ARCH;
-			fa = (struct fat_arch*)(ptr + sizeof(struct fat_header));
+			fa = (struct fat_arch*)(info.ptr + sizeof(struct fat_header));
 		}
 	}
 }
 
-void	handle_fat(char *ptr, off_t size, char *filename)
+void		handle_fat(t_info info, int arg)
 {
 	struct fat_header	*fh;
 
-	fh = (struct fat_header*)ptr;
+	fh = (struct fat_header*)(info.ptr);
 	if (fh->magic == FAT_CIGAM)
 	{
-		handle_fat32(ptr, size, filename, fh->nfat_arch);
+		handle_fat32(info, fh->nfat_arch, arg);
 	}
 }

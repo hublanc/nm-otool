@@ -1,17 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_nm.c                                            :+:      :+:    :+:   */
+/*   ft_otool.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2018/11/14 12:44:32 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/26 20:59:18 by hublanc          ###   ########.fr       */
+/*   Created: 2018/11/26 17:16:38 by hublanc           #+#    #+#             */
+/*   Updated: 2018/11/26 21:23:41 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ft_nm.h"
-#include <stdio.h>
+#include "../includes/ft_nm.h"
 
 int			main(int argc, char *argv[])
 {
@@ -21,7 +20,7 @@ int			main(int argc, char *argv[])
 
 	i = 1;
 	ret = 0;
-	arg = argc > 2 ? M_ARG : O_ARG;
+	arg = OTOOL_FILE;
 	if (argc > 1)
 	{
 		while (i < argc)
@@ -30,7 +29,5 @@ int			main(int argc, char *argv[])
 			i++;
 		}
 	}
-	else
-		ret = core("a.out", arg);
 	return (ret);
 }

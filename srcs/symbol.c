@@ -6,30 +6,17 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/22 18:28:22 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/23 15:44:17 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/26 20:23:38 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/ft_nm.h"
 
-static void		print_symbol_type(struct nlist_64 symbol, t_sec64_list *list,
-									uint32_t magic)
+static void		print_symt(struct nlist_64 symbol, uint32_t magic,
+							struct section_64 *sect, char *c_sym)
 {
-	struct section_64	*sect;
-	char				c_sym[4];
-	uint8_t				i;
-	uint64_t			value;
+	uint64_t value;
 
-	i = 0;
-	sect = NULL;
-	bzero(c_sym, 4);
-	ft_memset(c_sym, ' ', 3);
-	while (i < symbol.n_sect && list)
-	{
-		sect = list->section;
-		list = list->next;
-		i++;
-	}
 	value = (magic == MH_MAGIC || magic == MH_CIGAM ?
 				(uint32_t)symbol.n_value : symbol.n_value);
 	value = cb(magic, V_64, value);
@@ -55,20 +42,28 @@ static void		print_symbol_type(struct nlist_64 symbol, t_sec64_list *list,
 	ft_putstr(c_sym);
 }
 
-static uint32_t	jump_nlist(uint32_t magic)
+static void		print_symbol_type(struct nlist_64 symbol, t_sec64_list *list,
+									uint32_t magic)
 {
-	uint32_t	size;
+	struct section_64	*sect;
+	char				c_sym[4];
+	uint8_t				i;
 
-	size = 0;
-	if (magic == MH_MAGIC || magic == MH_CIGAM)
-		size = sizeof(struct nlist);
-	else if (magic == MH_MAGIC_64 || magic == MH_CIGAM_64)
-		size = sizeof(struct nlist_64);
-	return (size);
+	i = 0;
+	sect = NULL;
+	bzero(c_sym, 4);
+	ft_memset(c_sym, ' ', 3);
+	while (i < symbol.n_sect && list)
+	{
+		sect = list->section;
+		list = list->next;
+		i++;
+	}
+	print_symt(symbol, magic, sect, c_sym);
 }
 
 static t_symbol	*store_symbols(struct symtab_command *sym,
-						char *ptr, uint32_t magic)
+						t_info info, uint32_t magic)
 {
 	t_symbol		*symbols;
 	char			*str;
@@ -76,14 +71,14 @@ static t_symbol	*store_symbols(struct symtab_command *sym,
 	uint32_t		i;
 	uint32_t		j;
 
-	if (!(symbols = (t_symbol*)ft_memalloc(sizeof(t_symbol)
-					* cb(magic, V_32, sym->nsyms))))
+	if (!(symbols = (t_symbol*)ft_memalloc(sizeof(t_symbol) *
+					cb(magic, V_32, sym->nsyms))))
 		return (NULL);
-	array = (void*)ptr + cb(magic, V_32, sym->symoff);
-	str = (void*)ptr + cb(magic, V_32, sym->stroff);
+	array = (void*)(info.ptr) + cb(magic, V_32, sym->symoff);
+	str = (void*)(info.ptr) + cb(magic, V_32, sym->stroff);
 	i = 0;
 	j = 0;
-	while (i < cb(magic, V_32, sym->nsyms))
+	while (i < cb(magic, V_32, sym->nsyms) && cp(info, array) && cp(info, str))
 	{
 		if (!(cb(magic, V_32, array->n_type) & N_STAB))
 		{
@@ -94,18 +89,34 @@ static t_symbol	*store_symbols(struct symtab_command *sym,
 		array = (struct nlist_64*)((char*)array + jump_nlist(magic));
 		i++;
 	}
-	return(symbols);
+	return (symbols);
 }
 
-void			print_symbol_table(t_sec64_list *list,
-						struct symtab_command *sym, char *ptr, uint32_t magic)
+static void		print_symbol_name(t_info info, char *str)
+{
+	size_t	len;
+
+	len = 0;
+	if (str)
+	{
+		while (cp(info, (str + len)) && str[len])
+			len++;
+		write(1, str, len);
+	}
+	ft_putstr("\n");
+}
+
+void			print_symbol_table(t_info info, t_sec64_list *list,
+					struct symtab_command *sym, uint32_t magic)
 {
 	int32_t			i;
 	int32_t			len;
 	t_symbol		*symbols;
 
 	i = 0;
-	symbols = store_symbols(sym, ptr, magic);
+	if (!sym)
+		return ;
+	symbols = store_symbols(sym, info, magic);
 	len = len_symbols(symbols, sym, magic);
 	sort_symbols(symbols, 0, len - 1, magic);
 	while (i < len)
@@ -113,7 +124,9 @@ void			print_symbol_table(t_sec64_list *list,
 		print_value(cb(magic, V_64, symbols[i].info.n_value),
 					magic, symbols[i].info.n_type);
 		print_symbol_type(symbols[i].info, list, magic);
-		ft_putendl(symbols[i].name);
+		print_symbol_name(info, symbols[i].name);
 		i++;
 	}
+	if (symbols)
+		free(symbols);
 }
