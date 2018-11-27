@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/26 20:22:56 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/27 13:56:35 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/27 14:18:36 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,9 +45,9 @@ static void		print_content(t_info info, t_sec64_list *list, uint32_t offset,
 			put_hex(addr + i, pad);
 			ft_putstr("\t");
 		}
-		put_charhex(content[i]);
-		i++;
-		if (info.magic == MH_MAGIC || (info.magic == MH_CIGAM && i % 4 == 0))
+		put_charhex(content[i++]);
+		if (info.magic == MH_MAGIC || info.magic == MH_MAGIC_64 || ((info.magic
+			== MH_CIGAM || info.magic == MH_CIGAM_64) && i % 4 == 0))
 			ft_putstr(" ");
 		if ((i % 16 == 0) || (i >= size))
 			ft_putstr("\n");
@@ -68,6 +68,8 @@ static uint64_t	get_correct_size(t_sec64_list *list, uint32_t magic)
 			sec32 = (struct section*)(list->section);
 			ret = sec32->size;
 		}
+		else
+			ret = list->section->size;
 		ret = cb(magic, V_64, ret);
 	}
 	return (ret);
@@ -87,6 +89,8 @@ static uint32_t	get_correct_offset(t_sec64_list *list, uint32_t magic)
 			sec32 = (struct section*)(list->section);
 			ret = sec32->offset;
 		}
+		else
+			ret = list->section->offset;
 		ret = cb(magic, V_32, ret);
 	}
 	return (ret);
