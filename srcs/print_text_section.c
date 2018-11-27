@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/26 20:22:56 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/27 14:18:36 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/27 14:40:34 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ static void		print_content(t_info info, t_sec64_list *list, uint32_t offset,
 	pad = (info.magic == MH_MAGIC || info.magic == MH_CIGAM ? PAD_32 : PAD_64);
 	content = (info.ptr) + offset;
 	i = 0;
-	while (cp(info, info.ptr + i) && i < size)
+	while (cp(info, info.ptr + offset + i) && i < size)
 	{
 		if (i % 16 == 0)
 		{
@@ -49,7 +49,7 @@ static void		print_content(t_info info, t_sec64_list *list, uint32_t offset,
 		if (info.magic == MH_MAGIC || info.magic == MH_MAGIC_64 || ((info.magic
 			== MH_CIGAM || info.magic == MH_CIGAM_64) && i % 4 == 0))
 			ft_putstr(" ");
-		if ((i % 16 == 0) || (i >= size))
+		if ((i % 16 == 0) || (i >= size) || !(cp(info, info.ptr + offset + i)))
 			ft_putstr("\n");
 	}
 }
