@@ -6,7 +6,7 @@
 /*   By: hublanc <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/22 18:10:30 by hublanc           #+#    #+#             */
-/*   Updated: 2018/11/26 21:27:15 by hublanc          ###   ########.fr       */
+/*   Updated: 2018/11/27 13:58:40 by hublanc          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,10 @@ static void	put_name_fat32(char *filename, cpu_type_t type, int arch, int arg)
 		if (arg == O_ARG || arg == M_ARG)
 			ft_putstr("\n");
 		ft_putstr(filename);
-		ft_putstr(" (for architecture ");
+		if (arg == O_ARG || arg == M_ARG)
+			ft_putstr(" (for architecture ");
+		else if (arg == OTOOL_FILE || arg == OTOOL_OTH)
+			ft_putstr(" (architecture ");
 		print_cpu_type(type);
 		ft_putstr("):\n");
 	}
